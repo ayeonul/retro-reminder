@@ -196,7 +196,7 @@
       </label>
       <label v-if="dialogType === 'contact'">
         <span>전화번호</span>
-        <input v-model="dialogForm.phone" placeholder="010-0000-0000" />
+        <input v-model="dialogForm.phone" placeholder="010-0000-0000" @input="sanitizePhone" />
       </label>
       <label v-if="dialogType === 'schedule'">
         <span>시간</span>
@@ -455,6 +455,9 @@ export default {
       if (this.dialogType === 'contact') await this.addContact(this.dialogForm.name, this.dialogForm.phone)
       if (this.dialogType === 'schedule') await this.addSchedule(this.dialogForm.title, this.dialogForm.time)
       this.closeDialog()
+    },
+    sanitizePhone() {
+      this.dialogForm.phone = this.dialogForm.phone.replace(/[^0-9+-]/g, '')
     },
     async initializeData() {
       await Promise.all([this.loadMemos(), this.loadContacts(), this.loadSchedules(), this.loadSettings()])

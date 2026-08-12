@@ -11,6 +11,7 @@ function mapSchedule(schedule) {
 
   return {
     ...schedule,
+    time: schedule.time.slice(0, 5),
     year,
     month,
     day,
