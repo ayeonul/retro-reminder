@@ -30,7 +30,12 @@ export const useReminderStore = defineStore('reminder', {
     selectedSchedules: (state) => state.schedules.filter((schedule) => (
       schedule.year === state.year && schedule.month === state.month && schedule.day === state.selectedDay
     )),
-    selectedDateLabel: (state) => `${state.year}년 ${state.month}월 ${state.selectedDay}일`
+    selectedDateLabel: (state) => {
+      const weekdays = ['일', '월', '화', '수', '목', '금', '토']
+      const weekday = weekdays[new Date(state.year, state.month - 1, state.selectedDay).getDay()]
+
+      return `${state.year}년 ${state.month}월 ${state.selectedDay}일 (${weekday})`
+    }
   },
   actions: {
     async loadSchedules() {

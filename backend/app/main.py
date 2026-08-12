@@ -1,19 +1,39 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
 
+from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.staticfiles import StaticFiles
 
-from app.api import contacts, memos, schedules, settings
+from app.api import backups, contacts, memos, schedules, settings
 from app.core.database import Base, engine
+from app.core.database import SessionLocal
+from app.services.notifier import WindowsNotifier
+from app.services.reminder import process_due_schedules
 import app.models
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
     Base.metadata.create_all(bind=engine)
-    yield
+    scheduler = AsyncIOScheduler()
+    notifier = WindowsNotifier()
+    process_due_schedules(SessionLocal, notifier)
+    scheduler.add_job(
+        process_due_schedules,
+        "cron",
+        second=0,
+        args=[SessionLocal, notifier],
+        id="reminder-check",
+        max_instances=1,
+        coalesce=True,
+    )
+    scheduler.start()
+    try:
+        yield
+    finally:
+        scheduler.shutdown(wait=False)
 
 
 app = FastAPI(title="Reminder API", version="0.1.0", lifespan=lifespan)
@@ -30,6 +50,7 @@ app.include_router(memos.router, prefix="/api")
 app.include_router(contacts.router, prefix="/api")
 app.include_router(schedules.router, prefix="/api")
 app.include_router(settings.router, prefix="/api")
+app.include_router(backups.router, prefix="/api")
 
 
 @app.get("/api/health")

@@ -170,6 +170,21 @@ function deriveScrollTrackColor(baseColor) {
   return deriveColor(baseColor, -0.42, 0.02)
 }
 
+function deriveAlertActiveColor(baseColor) {
+  const { red, green, blue } = hexToRgb(baseColor)
+  const hsv = rgbToHsv(red, green, blue)
+
+  if (isAchromatic(hsv)) {
+    return deriveColor(baseColor, 0, -0.38)
+  }
+
+  if (hsv.value < 0.72) {
+    return deriveColor(baseColor, 0.28, 0.28)
+  }
+
+  return deriveColor(baseColor, 0.52, -0.18)
+}
+
 
 export const useThemeStore = defineStore('theme', {
   state: () => ({
@@ -190,9 +205,9 @@ export const useThemeStore = defineStore('theme', {
       '--theme-title-dark': deriveColor(state.accentColor, 0.38, -0.1),
       '--theme-title': deriveColor(state.accentColor, 0.2, -0.012),
       '--theme-title-muted': deriveColor(state.accentColor, 0.03, -0.25),
-      '--theme-date-text': deriveTextColor(state.accentColor),
+      '--theme-date-text': deriveColor(state.accentColor, 0.34, -0.012),
       '--theme-date-muted': deriveMutedTextColor(state.accentColor),
-      '--theme-date-active': deriveTextColor(state.accentColor),
+      '--theme-date-active': deriveAlertActiveColor(state.accentColor),
       '--theme-title-text': deriveTitleTextColor(state.accentColor),
       '--theme-text': deriveTextColor(state.accentColor),
       '--theme-surface-text': deriveColor(state.accentColor, -0.15, -0.7)

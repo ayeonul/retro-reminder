@@ -235,8 +235,32 @@
           <ChromePicker v-model="settingsAccentColor" :disable-alpha="true" @update:modelValue="updateAccentColor" />
         </div>
       </section>
+      <section class="settings-section backup-section" aria-labelledby="backup-title">
+        <div class="settings-section-heading">
+          <div>
+            <h2 id="backup-title">데이터 백업</h2>
+            <p>메모, 연락처, 일정 및 설정을 파일로 보관하거나 복원합니다.</p>
+          </div>
+        </div>
+        <div class="backup-actions">
+          <button type="button" @click="exportBackup">데이터 내보내기</button>
+          <button type="button" @click="openBackupFilePicker">데이터 불러오기</button>
+          <input ref="backupFileInput" type="file" accept=".db,application/vnd.sqlite3,application/octet-stream" @change="selectBackupFile" />
+        </div>
+      </section>
       <div class="dialog-buttons">
         <button type="button" @click="closeSettings">닫기</button>
+      </div>
+    </section>
+  </div>
+
+  <div v-if="backupImportFile" class="dialog-backdrop" @mousedown.self="cancelBackupImport">
+    <section class="retro-dialog delete-confirm" role="dialog" aria-modal="true" aria-label="데이터 불러오기 확인">
+      <header>데이터 불러오기</header>
+      <p><strong>{{ backupImportFile.name }}</strong> 파일로 현재 데이터를 교체하시겠습니까?</p>
+      <div class="dialog-buttons">
+        <button type="button" @click="confirmBackupImport">불러오기</button>
+        <button type="button" @click="cancelBackupImport">취소</button>
       </div>
     </section>
   </div>
@@ -249,6 +273,7 @@ import { useContactStore } from './stores/contact'
 import { useMemoStore } from './stores/memo'
 import { useReminderStore } from './stores/reminder'
 import { useThemeStore } from './stores/theme'
+import apiClient from './api/client'
 import { ChromePicker } from 'vue-color'
 import 'vue-color/style.css'
 import settingsIcon from 'pixelarticons/svg/settings-cog.svg'
@@ -281,6 +306,7 @@ export default {
       dialogType: null,
       isSettingsOpen: false,
       settingsAccentColor: '#ffdbd9',
+      backupImportFile: null,
       deleteMode: null,
       confirmDeleteType: null,
       dialogForm: { title: '', content: '', name: '', phone: '', time: '09:00' },
@@ -437,6 +463,38 @@ export default {
     },
     closeSettings() {
       this.isSettingsOpen = false
+    },
+    async exportBackup() {
+      const response = await apiClient.post('/backups/export', null, { responseType: 'blob' })
+      const filename = `reminder-backup-${new Date().toISOString().slice(0, 10)}.db`
+      const url = URL.createObjectURL(response.data)
+      const link = document.createElement('a')
+      link.href = url
+      link.download = filename
+      link.click()
+      URL.revokeObjectURL(url)
+    },
+    openBackupFilePicker() {
+      this.$refs.backupFileInput.click()
+    },
+    selectBackupFile(event) {
+      const [file] = event.target.files
+      if (file) this.backupImportFile = file
+      event.target.value = ''
+    },
+    cancelBackupImport() {
+      this.backupImportFile = null
+    },
+    async confirmBackupImport() {
+      const formData = new FormData()
+      formData.append('file', this.backupImportFile)
+      try {
+        await apiClient.post('/backups/import', formData)
+        await this.initializeData()
+        this.backupImportFile = null
+      } catch (error) {
+        window.alert(error.response?.data?.detail || '백업 파일을 불러오지 못했습니다.')
+      }
     },
     async updateAccentColor(color) {
       const normalized = color.replace('#', '')

@@ -53,8 +53,11 @@ def create_schedule(payload: ScheduleCreate, db: Session = Depends(get_db)) -> S
 @router.patch("/{schedule_id}", response_model=ScheduleRead)
 def update_schedule(schedule_id: int, payload: ScheduleUpdate, db: Session = Depends(get_db)) -> Schedule:
     schedule = get_schedule_or_404(schedule_id, db)
-    for field, value in payload.model_dump(exclude_unset=True).items():
+    changes = payload.model_dump(exclude_unset=True)
+    for field, value in changes.items():
         setattr(schedule, field, value)
+    if {"date", "time", "alert_enabled"}.intersection(changes):
+        schedule.notified_at = None
     db.commit()
     db.refresh(schedule)
     return schedule
