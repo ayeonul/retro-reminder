@@ -12,6 +12,10 @@ from app.main import app
 from app.services.app_icon import create_themed_icons, get_accent_color
 
 
+MIN_WINDOW_WIDTH = 620
+MIN_WINDOW_HEIGHT = 400
+
+
 def create_bound_socket() -> socket.socket:
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -33,6 +37,12 @@ class DesktopApi:
     def close_window(self) -> None:
         if self._window is not None:
             self._window.destroy()
+
+    def resize_window(self, width: int, height: int, x: int | None = None, y: int | None = None) -> None:
+        if self._window is not None:
+            self._window.resize(max(MIN_WINDOW_WIDTH, int(width)), max(MIN_WINDOW_HEIGHT, int(height)))
+            if x is not None and y is not None:
+                self._window.move(int(x), int(y))
 
 
 def run_desktop_app() -> None:
@@ -61,7 +71,7 @@ def run_desktop_app() -> None:
         f"http://127.0.0.1:{port}",
         width=900,
         height=600,
-        min_size=(620, 400),
+        min_size=(MIN_WINDOW_WIDTH, MIN_WINDOW_HEIGHT),
         frameless=True,
         easy_drag=False,
         shadow=True,

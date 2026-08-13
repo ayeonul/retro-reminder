@@ -1,5 +1,10 @@
 ﻿<template>
   <div class="app-page" :class="{ 'use-pixel-font': usePixelFont }" :style="cssVariables">
+  <div class="window-resize-handle resize-top" @pointerdown.prevent="startWindowResize('top', $event)"></div>
+  <div class="window-resize-handle resize-right" @pointerdown.prevent="startWindowResize('right', $event)"></div>
+  <div class="window-resize-handle resize-bottom" @pointerdown.prevent="startWindowResize('bottom', $event)"></div>
+  <div class="window-resize-handle resize-left" @pointerdown.prevent="startWindowResize('left', $event)"></div>
+  <div class="window-resize-handle resize-bottom-right" @pointerdown.prevent="startWindowResize('bottom-right', $event)"></div>
   <main class="app-shell">
     <header class="window-bar">
       <div class="window-drag-region pywebview-drag-region"></div>
@@ -328,6 +333,9 @@ export default {
         expandedMemoIds: [],
         sidebarHeight: 0,
         resizeObserver: null,
+        windowResize: null,
+        resizeRequestFrame: null,
+        pendingWindowResize: null,
         licenseScrollTop: 0,
         licenseScrollHeight: 0,
         licenseClientHeight: 0,
@@ -547,6 +555,57 @@ export default {
     closeWindow() {
       window.pywebview?.api?.close_window()
     },
+    startWindowResize(direction, event) {
+      const resizeWindow = window.pywebview?.api?.resize_window
+      if (typeof resizeWindow !== 'function') return
+
+      this.windowResize = {
+        direction,
+        startX: event.screenX,
+        startY: event.screenY,
+        startWidth: window.innerWidth,
+        startHeight: window.innerHeight,
+        startWindowX: window.screenX,
+        startWindowY: window.screenY
+      }
+      window.addEventListener('pointermove', this.resizeWindow)
+      window.addEventListener('pointerup', this.stopWindowResize, { once: true })
+      window.addEventListener('pointercancel', this.stopWindowResize, { once: true })
+    },
+    resizeWindow(event) {
+      if (!this.windowResize) return
+
+      const { direction, startX, startY, startWidth, startHeight, startWindowX, startWindowY } = this.windowResize
+      const horizontalDelta = event.screenX - startX
+      const verticalDelta = event.screenY - startY
+      const width = Math.max(480, startWidth + (direction.includes('left') ? -horizontalDelta : direction.includes('right') ? horizontalDelta : 0))
+      const height = Math.max(360, startHeight + (direction.includes('top') ? -verticalDelta : direction.includes('bottom') ? verticalDelta : 0))
+      const actualWidth = Math.max(620, width)
+      const actualHeight = Math.max(400, height)
+      const x = direction.includes('left') ? startWindowX + startWidth - actualWidth : startWindowX
+      const y = direction.includes('top') ? startWindowY + startHeight - actualHeight : startWindowY
+      this.pendingWindowResize = { width: actualWidth, height: actualHeight, x, y }
+      if (this.resizeRequestFrame !== null) return
+
+      this.resizeRequestFrame = window.requestAnimationFrame(() => {
+        this.resizeRequestFrame = null
+        const resizeWindow = window.pywebview?.api?.resize_window
+        const pending = this.pendingWindowResize
+        if (typeof resizeWindow !== 'function' || !pending) return
+
+        Promise.resolve(resizeWindow.call(
+          window.pywebview.api,
+          Math.round(pending.width),
+          Math.round(pending.height),
+          Math.round(pending.x),
+          Math.round(pending.y)
+        )).catch(() => {})
+      })
+    },
+    stopWindowResize() {
+      this.windowResize = null
+      window.removeEventListener('pointermove', this.resizeWindow)
+    },
     openSettings() {
       this.settingsAccentColor = this.accentColor
       this.isSettingsOpen = true
@@ -742,6 +801,8 @@ export default {
     beforeUnmount() {
       this.resizeObserver.disconnect()
       window.clearInterval(this.dateChangeTimer)
+      this.stopWindowResize()
+      if (this.resizeRequestFrame !== null) window.cancelAnimationFrame(this.resizeRequestFrame)
   }
 }
 </script>

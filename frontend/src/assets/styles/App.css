@@ -81,10 +81,10 @@ button {
 .app-shell {
   display: grid;
   grid-template-rows: 32px minmax(0, 1fr);
-  width: min(900px, 100%);
-  height: min(600px, 100vh);
+  width: 100%;
+  height: 100vh;
   min-height: 0;
-  margin: 0 auto;
+  margin: 0;
   overflow: hidden;
   background: #fff;
   border: 1px solid #f1c0bd;
@@ -92,11 +92,60 @@ button {
 
 .app-page {
   display: grid;
+  position: relative;
   height: 100vh;
   min-height: 100vh;
   overflow: hidden;
   place-items: center;
   background: #fff;
+}
+
+.window-resize-handle {
+  position: fixed;
+  z-index: 20;
+  touch-action: none;
+}
+
+.resize-top,
+.resize-bottom {
+  right: 6px;
+  left: 6px;
+  height: 6px;
+}
+
+.resize-top {
+  top: 0;
+  cursor: ns-resize;
+}
+
+.resize-bottom {
+  bottom: 0;
+  cursor: ns-resize;
+}
+
+.resize-left,
+.resize-right {
+  top: 6px;
+  bottom: 6px;
+  width: 6px;
+}
+
+.resize-left {
+  left: 0;
+  cursor: ew-resize;
+}
+
+.resize-right {
+  right: 0;
+  cursor: ew-resize;
+}
+
+.resize-bottom-right {
+  right: 0;
+  bottom: 0;
+  width: 12px;
+  height: 12px;
+  cursor: nwse-resize;
 }
 
 .window-bar {
@@ -387,15 +436,16 @@ button {
 
   .workspace {
     grid-template-columns: 1fr;
+    grid-template-rows: minmax(140px, 0.65fr) minmax(0, 1.35fr);
   }
 
   .sidebar {
-    display: flex;
+    display: grid;
     border-right: 0;
   }
 
   .panel {
-    min-height: auto;
+    min-height: 0;
   }
 
   .schedule-summary {
@@ -407,7 +457,7 @@ button {
   }
 
   .calendar {
-    min-height: 380px;
+    min-height: 0;
   }
 }
 
@@ -1598,6 +1648,12 @@ input[type="checkbox"] {
   background: var(--theme-title);
   border: 1px solid var(--theme-dark);
   border-radius: 0;
+}
+
+@media (max-width: 700px) {
+  .selected-date .selected-month-day {
+    font-size: 40px;
+  }
 }
 
 
