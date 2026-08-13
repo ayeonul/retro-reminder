@@ -359,9 +359,11 @@ export default {
             { name: 'Pydantic Settings', license: 'MIT License' },
             { name: 'HTTPX', license: 'BSD 3-Clause License' },
             { name: 'pywebview', license: 'BSD 3-Clause License' },
-            { name: 'APScheduler', license: 'MIT License' },
-            { name: 'win11toast', license: 'MIT License' },
-            { name: 'python-multipart', license: 'Apache License 2.0' }
+              { name: 'APScheduler', license: 'MIT License' },
+              { name: 'win11toast', license: 'MIT License' },
+              { name: 'python-multipart', license: 'Apache License 2.0' },
+              { name: 'Pillow', license: 'HPND License' },
+              { name: 'PyInstaller', license: 'GPL-2.0-or-later · 부트로더 예외' }
           ]
         },
         {
@@ -369,8 +371,8 @@ export default {
           items: [
             { name: 'Paperlogy', license: 'SIL Open Font License 1.1' },
               { name: 'Neo둥근모', license: 'SIL Open Font License 1.1', creator: 'Eunbin Jeong (Dalgona)' },
-              { name: '얇은둥근모 v0.1', license: '퍼블릭 도메인 · 제작자 고지', creator: 'sawalk' },
-              { name: '굵은둥근모 v0.2', license: '퍼블릭 도메인 · 제작자 고지', creator: 'sawalk' }
+                { name: '얇은둥근모 v0.1', license: '제작자 고지 및 배포 조건', creator: 'sawalk' },
+                { name: '굵은둥근모 v0.2', license: '제작자 고지 및 배포 조건', creator: 'sawalk' }
           ]
         }
       ],

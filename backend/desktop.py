@@ -8,6 +8,7 @@ import webview
 
 import app.models
 from app.core.database import Base, SessionLocal, engine
+from app.main import app
 from app.services.app_icon import create_themed_icons, get_accent_color
 
 
@@ -42,7 +43,7 @@ def run_desktop_app() -> None:
     server_socket = create_bound_socket()
     port = server_socket.getsockname()[1]
     server = uvicorn.Server(
-        uvicorn.Config("app.main:app", host="127.0.0.1", port=port, log_level="warning")
+        uvicorn.Config(app, host="127.0.0.1", port=port, log_level="warning")
     )
     server_thread = threading.Thread(target=server.run, kwargs={"sockets": [server_socket]}, daemon=True)
     server_thread.start()

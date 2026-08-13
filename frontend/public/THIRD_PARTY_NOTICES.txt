@@ -35,6 +35,8 @@ pywebview - BSD 3-Clause License
 APScheduler - MIT License
 win11toast - MIT License
 python-multipart - Apache License 2.0
+Pillow - HPND License
+PyInstaller - GPL-2.0-or-later, with a bootloader exception
 
 Fonts
 -----
@@ -45,13 +47,13 @@ Creator: Eunbin Jeong (Dalgona)
 Copyright (c) 2017-2021, Eunbin Jeong (Dalgona.)
 Source and license: https://github.com/neodgm/neodgm/blob/main/LICENSE.txt
 
-얇은둥근모 v0.1 (ThinDungGeunMo.ttf) - Public Domain, with creator notice
+얇은둥근모 v0.1 (ThinDungGeunMo.ttf) - Creator notice and distribution conditions
 Creator: sawalk
 The release states that it may be used commercially, modified, and redistributed,
 but must not be represented as created by a third party other than sawalk.
 Source: https://github.com/sawalk/Korean-Font-Change/releases#release-Thin-0.1
 
-굵은둥근모 v0.2 (BoldDunggeunmo.ttf) - Public Domain, with creator notice
+굵은둥근모 v0.2 (BoldDunggeunmo.ttf) - Creator notice and distribution conditions
 Creator: sawalk
 The release states that it may be used commercially, modified, and redistributed,
 but must not be represented as created by a third party other than sawalk.
