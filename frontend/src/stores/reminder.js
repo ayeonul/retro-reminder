@@ -39,17 +39,27 @@ export const useReminderStore = defineStore('reminder', {
   },
   actions: {
     async loadSchedules() {
-      const lastDay = new Date(this.year, this.month, 0).getDate()
+      const firstDate = new Date(this.year, this.month - 1, 1)
+      const rangeStart = new Date(firstDate)
+      rangeStart.setDate(1 - firstDate.getDay())
+      const rangeEnd = new Date(rangeStart)
+      rangeEnd.setDate(rangeStart.getDate() + 41)
       const { data } = await apiClient.get('/schedules', {
         params: {
-          from: formatDate(this.year, this.month, 1),
-          to: formatDate(this.year, this.month, lastDay)
+          from: formatDate(rangeStart.getFullYear(), rangeStart.getMonth() + 1, rangeStart.getDate()),
+          to: formatDate(rangeEnd.getFullYear(), rangeEnd.getMonth() + 1, rangeEnd.getDate())
         }
       })
       this.schedules = data.map(mapSchedule)
     },
     selectDay(day) {
       this.selectedDay = day
+    },
+    async selectDate(year, month, day) {
+      this.year = year
+      this.month = month
+      this.selectedDay = day
+      await this.loadSchedules()
     },
     async moveMonth(offset) {
       const date = new Date(this.year, this.month - 1 + offset, 1)

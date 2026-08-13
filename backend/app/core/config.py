@@ -8,6 +8,9 @@ DATA_DIRECTORY = Path(
 )
 DATA_DIRECTORY.mkdir(parents=True, exist_ok=True)
 
+DOWNLOADS_DIRECTORY = Path(os.getenv("REMINDER_DOWNLOADS_DIRECTORY") or Path.home() / "Downloads")
+DOWNLOADS_DIRECTORY.mkdir(parents=True, exist_ok=True)
+
 
 def default_database_url() -> str:
     return f"sqlite:///{(DATA_DIRECTORY / 'reminder.db').as_posix()}"

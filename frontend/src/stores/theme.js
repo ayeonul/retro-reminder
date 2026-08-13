@@ -188,7 +188,8 @@ function deriveAlertActiveColor(baseColor) {
 
 export const useThemeStore = defineStore('theme', {
   state: () => ({
-    accentColor: '#ffdbd9'
+    accentColor: '#ffdbd9',
+    usePixelFont: typeof window === 'undefined' || window.localStorage.getItem('reminder.usePixelFont') !== 'false'
   }),
   getters: {
     cssVariables: (state) => ({
@@ -196,6 +197,7 @@ export const useThemeStore = defineStore('theme', {
       '--theme-button': deriveButtonColor(state.accentColor),
       '--theme-scroll-track': deriveScrollTrackColor(state.accentColor),
       '--theme-page': deriveHueColor(state.accentColor, 0.035, 0.995),
+      '--theme-adjacent-day': deriveHueColor(state.accentColor, 0.01, 1),
       '--theme-panel': deriveColor(state.accentColor, -0.42, 0.02),
       '--theme-light': deriveColor(state.accentColor, -0.5, 0.12),
       '--theme-highlight': deriveColor(state.accentColor, -0.28, 0.07),
@@ -221,6 +223,10 @@ export const useThemeStore = defineStore('theme', {
     async setAccentColor(color) {
       this.accentColor = color
       await apiClient.patch('/settings', { accent_color: color })
+    },
+    setUsePixelFont(usePixelFont) {
+      this.usePixelFont = usePixelFont
+      window.localStorage.setItem('reminder.usePixelFont', String(usePixelFont))
     }
   }
 })

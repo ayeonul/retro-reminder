@@ -1,5 +1,6 @@
 from contextlib import asynccontextmanager
 from pathlib import Path
+import sys
 
 from apscheduler.schedulers.asyncio import AsyncIOScheduler
 from fastapi import FastAPI
@@ -58,6 +59,10 @@ def health_check() -> dict[str, str]:
     return {"status": "ok"}
 
 
-frontend_directory = Path(__file__).resolve().parents[2] / "frontend" / "dist"
+frontend_directory = (
+    Path(sys._MEIPASS) / "frontend" / "dist"
+    if getattr(sys, "frozen", False)
+    else Path(__file__).resolve().parents[2] / "frontend" / "dist"
+)
 if frontend_directory.is_dir():
     app.mount("/", StaticFiles(directory=frontend_directory, html=True), name="frontend")

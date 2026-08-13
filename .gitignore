@@ -6,6 +6,7 @@ __pycache__/
 *.sqlite3
 dist/
 build/
+release/
 node_modules/
 frontend/dist/
 frontend/.env.local
@@ -13,3 +14,4 @@ frontend/.env.local
 .coverage
 htmlcov/
 *.log
+*.spec

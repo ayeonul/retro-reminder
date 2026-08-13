@@ -11,6 +11,7 @@ if test_database.exists():
     test_database.unlink()
 os.environ["REMINDER_DATABASE_URL"] = f"sqlite:///{test_database.as_posix()}"
 os.environ["REMINDER_DATA_DIRECTORY"] = str(Path(tempfile.gettempdir()) / "reminder_api_test_data")
+os.environ["REMINDER_DOWNLOADS_DIRECTORY"] = str(Path(tempfile.gettempdir()) / "reminder_api_test_downloads")
 
 from fastapi.testclient import TestClient
 
@@ -44,8 +45,14 @@ def test_api_crud_flow():
         assert len(client.get("/api/schedules", params={"from": "2026-08-01", "to": "2026-08-31"}).json()) == 1
         assert client.patch(f"/api/schedules/{schedule_id}", json={"alert_enabled": False}).json()["alert_enabled"] is False
 
-        assert client.get("/api/settings").json()["accent_color"] == "#ffdbd9"
-        assert client.patch("/api/settings", json={"accent_color": "#123abc"}).json()["accent_color"] == "#123abc"
+        settings = client.get("/api/settings").json()
+        assert settings["accent_color"] == "#ffdbd9"
+        assert settings["pixel_font_enabled"] is True
+        updated_settings = client.patch(
+            "/api/settings",
+            json={"accent_color": "#123abc", "pixel_font_enabled": False},
+        ).json()
+        assert updated_settings == {"accent_color": "#123abc", "pixel_font_enabled": False}
 
         assert client.delete(f"/api/memos/{memo_id}").status_code == 204
         assert client.delete(f"/api/contacts/{contact_id}").status_code == 204
@@ -87,12 +94,15 @@ def test_backup_export_and_import():
         client.post("/api/memos", json={"title": "백업 대상", "content": "보존할 내용"})
         exported = client.post("/api/backups/export")
         assert exported.status_code == 200
-        assert exported.content.startswith(b"SQLite format 3")
+        exported_path = Path(exported.json()["path"])
+        assert exported_path.parent == Path(os.environ["REMINDER_DOWNLOADS_DIRECTORY"])
+        assert exported_path.read_bytes().startswith(b"SQLite format 3")
 
         client.post("/api/memos", json={"title": "복원 후 사라질 메모"})
         restored = client.post(
             "/api/backups/import",
-            files={"file": ("reminder-backup.db", exported.content, "application/vnd.sqlite3")},
+            files={"file": ("reminder-backup.db", exported_path.read_bytes(), "application/vnd.sqlite3")},
         )
         assert restored.status_code == 204
         assert [memo["title"] for memo in client.get("/api/memos").json()] == ["백업 대상"]
+        exported_path.unlink()

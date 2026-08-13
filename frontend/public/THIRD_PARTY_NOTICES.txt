@@ -1,0 +1,64 @@
+Reminder - Third-Party Notices
+==============================
+
+This application includes third-party software and fonts. Their license notices
+and source locations are listed below.
+
+Frontend
+--------
+Vue - MIT License
+Source: https://github.com/vuejs/core
+
+Pinia - MIT License
+Source: https://github.com/vuejs/pinia
+
+Axios - MIT License
+Source: https://github.com/axios/axios
+
+Vue Color - MIT License
+Source: https://github.com/linx4200/vue-color
+
+Pixelarticons - MIT License
+Source: https://github.com/halfmage/pixelarticons
+
+core-js - MIT License
+Source: https://github.com/zloirock/core-js
+
+Backend
+-------
+FastAPI - MIT License
+Uvicorn - BSD 3-Clause License
+SQLAlchemy - MIT License
+Pydantic Settings - MIT License
+HTTPX - BSD 3-Clause License
+pywebview - BSD 3-Clause License
+APScheduler - MIT License
+win11toast - MIT License
+python-multipart - Apache License 2.0
+
+Fonts
+-----
+Paperlogy - SIL Open Font License 1.1
+
+Neo둥근모 (neodgm.woff) - SIL Open Font License 1.1
+Creator: Eunbin Jeong (Dalgona)
+Copyright (c) 2017-2021, Eunbin Jeong (Dalgona.)
+Source and license: https://github.com/neodgm/neodgm/blob/main/LICENSE.txt
+
+얇은둥근모 v0.1 (ThinDungGeunMo.ttf) - Public Domain, with creator notice
+Creator: sawalk
+The release states that it may be used commercially, modified, and redistributed,
+but must not be represented as created by a third party other than sawalk.
+Source: https://github.com/sawalk/Korean-Font-Change/releases#release-Thin-0.1
+
+굵은둥근모 v0.2 (BoldDunggeunmo.ttf) - Public Domain, with creator notice
+Creator: sawalk
+The release states that it may be used commercially, modified, and redistributed,
+but must not be represented as created by a third party other than sawalk.
+Source: https://github.com/sawalk/Korean-Font-Change/releases#release-Bold-v0.2
+
+License Texts
+-------------
+For the complete license texts and copyright notices, consult each dependency's
+distributed LICENSE file and the source locations listed above. This notices file
+is copied to the frontend build output as THIRD_PARTY_NOTICES.txt.

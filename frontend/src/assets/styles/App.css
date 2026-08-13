@@ -1,25 +1,49 @@
 ﻿@font-face {
-  font-family: "NeoDunggeunmo";
+  font-family: "Paperlogy";
+  src: url("../fonts/Paperlogy-1.001/Paperlogy-4Regular.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 400;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("../fonts/Paperlogy-1.001/Paperlogy-3Light.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 300;
+}
+
+@font-face {
+  font-family: "Paperlogy";
+  src: url("../fonts/Paperlogy-1.001/Paperlogy-7Bold.ttf") format("truetype");
+  font-display: swap;
+  font-weight: 700;
+}
+
+@font-face {
+  font-family: "PixelFont";
   src: url("../fonts/neodgm.woff") format("woff");
   font-display: swap;
+  font-weight: 400;
 }
 
 @font-face {
-  font-family: "ThinDungGeunMo";
+  font-family: "PixelFont";
   src: url("../fonts/ThinDungGeunMo.ttf") format("truetype");
   font-display: swap;
+  font-weight: 300;
 }
 
 @font-face {
-  font-family: "BoldDungGeunMo";
+  font-family: "PixelFont";
   src: url("../fonts/BoldDunggeunmo.ttf") format("truetype");
   font-display: swap;
+  font-weight: 700;
 }
 
 :root {
   background: #fffaf9;
   color: #3f3434;
-  font-family: "NeoDunggeunmo", "Malgun Gothic", sans-serif;
+  font-family: "Paperlogy", "Malgun Gothic", sans-serif;
 }
 
 * {
@@ -27,7 +51,17 @@
 }
 
 .app-page {
+  --font-regular: "Paperlogy", "Malgun Gothic", sans-serif;
+  --font-light: "Paperlogy", "Malgun Gothic", sans-serif;
+  --font-bold: "Paperlogy", "Malgun Gothic", sans-serif;
+  font-family: var(--font-regular);
   user-select: none;
+}
+
+.app-page.use-pixel-font {
+  --font-regular: "PixelFont", "Malgun Gothic", sans-serif;
+  --font-light: "PixelFont", "Malgun Gothic", sans-serif;
+  --font-bold: "PixelFont", "Malgun Gothic", sans-serif;
 }
 
 .memo-list,
@@ -380,7 +414,7 @@ button {
 :root {
   background: #fff;
   color: #2b1d20;
-  font-family: "NeoDunggeunmo", "Malgun Gothic", sans-serif;
+  font-family: var(--font-regular);
 }
 
 body {
@@ -475,7 +509,7 @@ body {
   border: 0;
   border-bottom: 1px solid var(--theme-dark);
   font-size: 14px;
-  font-family: "BoldDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-bold);
   font-weight: 400;
 }
 
@@ -517,7 +551,7 @@ body {
   padding: 0;
   place-items: center;
   color: var(--theme-text);
-  font-family: "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-regular);
   font-size: 15px;
   line-height: 1;
 }
@@ -629,7 +663,7 @@ body {
   color: var(--theme-text);
   background: var(--theme-light);
   border-top: 1px dotted var(--theme-accent);
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
   font-size: 12px;
   line-height: 1.45;
   white-space: pre-wrap;
@@ -746,19 +780,42 @@ input[type="checkbox"] {
 }
 
 .month-controls {
-  display: flex;
-  gap: 7px;
+  position: relative;
+  display: block;
+  width: 100%;
+  min-height: 48px;
   align-items: center;
+}
+
+.selected-month-day {
+  display: block;
+  width: 100%;
+  text-align: center;
 }
 
 .month-controls button {
   display: grid;
+  position: absolute;
+  top: 50%;
   width: 20px;
   height: 20px;
   padding: 0;
   place-items: center;
   color: var(--theme-text);
+  transform: translateY(-50%);
 }
+
+.month-controls button:first-child {
+  left: 0;
+}
+
+.month-controls button:last-child {
+    right: 0;
+  }
+
+  .month-controls button:active {
+    transform: translateY(-50%);
+  }
 
 .schedule-item button {
   width: 18px;
@@ -889,17 +946,27 @@ input[type="checkbox"] {
   color: var(--theme-text);
 }
 
+.settings-section-heading > div {
+  width: 100%;
+}
+
 .settings-section-heading h2 {
   margin: 0;
-  font-family: "BoldDungGeunMo", sans-serif;
+  font-family: var(--font-bold);
   font-size: 14px;
   font-weight: 400;
 }
 
 .settings-section-heading p {
   margin: 7px 0 0;
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
   font-size: 13px;
+}
+
+.settings-section-heading .theme-restart-hint {
+  margin-top: 4px;
+  color: var(--theme-subtle-text);
+  font-size: 11px;
 }
 
 .accent-color-preview {
@@ -921,17 +988,17 @@ input[type="checkbox"] {
 }
 
 .settings-picker .vc-chrome-picker {
-  width: min(100%, 300px);
+  width: min(100%, 250px);
   margin: 0 auto;
   border: 2px solid;
   border-color: var(--theme-shadow) var(--theme-light) var(--theme-light) var(--theme-shadow);
   border-radius: 0;
   box-shadow: none;
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
 }
 
 .settings-picker .vc-chrome-picker .body {
-  padding: 12px;
+  padding: 10px;
 }
 
 .settings-picker .vc-chrome-picker .saturation,
@@ -940,20 +1007,76 @@ input[type="checkbox"] {
 }
 
 .settings-picker .vc-chrome-picker .fieldsWrap {
-  padding-top: 10px;
+  padding-top: 8px;
 }
 
 .settings-picker .vc-chrome-picker .fields .vc-input-input {
   height: 24px;
   border-radius: 0;
   box-shadow: inset 0 0 0 1px var(--theme-shadow);
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
   font-size: 13px;
 }
 
 .settings-picker .vc-chrome-picker .fields .vc-input-label {
   margin-top: 7px;
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
+}
+
+.settings-picker .vc-chrome-picker .toggle-btn {
+  display: none;
+}
+
+.retro-dialog .pixel-font-option {
+  display: inline-flex;
+  gap: 7px;
+  align-items: center;
+  width: fit-content;
+  margin-top: 8px;
+  padding: 0;
+  white-space: nowrap;
+  color: var(--theme-text);
+  cursor: pointer;
+  font-family: var(--font-regular);
+  font-size: 13px;
+}
+
+.pixel-font-option input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--theme-title);
+}
+
+.retro-dialog > header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.dialog-close {
+  display: grid;
+  width: 18px;
+  height: 18px;
+  padding: 0;
+  place-items: center;
+  cursor: pointer;
+  background: var(--theme-button);
+  border: 2px solid;
+  border-color: var(--theme-light) var(--theme-dark) var(--theme-dark) var(--theme-light);
+  box-shadow: 1px 1px 0 var(--theme-shadow);
+}
+
+.dialog-close:active {
+  border-color: var(--theme-dark) var(--theme-light) var(--theme-light) var(--theme-dark);
+  box-shadow: none;
+  transform: translate(1px, 1px);
+}
+
+.dialog-close img {
+  width: 11px;
+  height: 11px;
+  image-rendering: pixelated;
 }
 
 .backup-section {
@@ -986,11 +1109,95 @@ input[type="checkbox"] {
   display: none;
 }
 
+.license-link {
+  width: calc(100% - 20px);
+  padding: 9px 0 0;
+  margin: 0 10px;
+  color: var(--theme-date-muted);
+  cursor: pointer;
+  background: transparent;
+  border: 0;
+  border-top: 1px dotted var(--theme-shadow);
+  font-family: var(--font-light);
+  font-size: 12px;
+  text-align: left;
+}
+
+.license-link:hover {
+  color: var(--theme-text);
+}
+
+.licenses-dialog {
+  display: flex;
+  width: min(440px, 100%);
+  max-height: min(580px, calc(100vh - 40px));
+  flex-direction: column;
+}
+
+.license-intro {
+  padding: 12px 10px 4px;
+  margin: 0;
+  color: var(--theme-text);
+  font-family: var(--font-light);
+  font-size: 13px;
+}
+
+.license-list {
+    min-height: 0;
+    padding: 6px 10px 12px;
+    flex: 1;
+    overflow-x: hidden;
+    overflow-y: auto;
+    scrollbar-width: none;
+  }
+
+  .license-list::-webkit-scrollbar {
+    display: none;
+  }
+
+  .license-scroll-shell {
+    display: flex;
+    min-height: 0;
+    flex: 1;
+  }
+
+.license-list section + section {
+  margin-top: 14px;
+}
+
+.license-list h2 {
+  padding-bottom: 5px;
+  margin: 0;
+  color: var(--theme-title-muted);
+  border-bottom: 1px dotted var(--theme-shadow);
+  font-family: var(--font-bold);
+  font-size: 13px;
+  font-weight: 400;
+}
+
+.license-item {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 7px 2px;
+  color: var(--theme-text);
+  font-family: var(--font-regular);
+  font-size: 13px;
+}
+
+.license-list small {
+  flex: 0 0 auto;
+  color: var(--theme-date-muted);
+  font-family: var(--font-light);
+  font-size: 11px;
+  text-align: right;
+}
+
 .retro-dialog header {
   padding: 5px 7px;
   color: var(--theme-title-text);
   background: var(--theme-title);
-  font-family: "BoldDungGeunMo", sans-serif;
+  font-family: var(--font-bold);
   font-size: 14px;
 }
 
@@ -1021,11 +1228,11 @@ input[type="checkbox"] {
 }
 
 .retro-dialog input {
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
 }
 
 .retro-dialog textarea {
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
   font-size: 15px;
   resize: none;
   overflow-y: scroll;
@@ -1214,7 +1421,7 @@ input[type="checkbox"] {
 
 .selected-date span {
   color: var(--theme-date-text);
-  font-family: "BoldDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-bold);
   font-size: clamp(30px, 5vw, 43px);
   letter-spacing: -2px;
 }
@@ -1313,7 +1520,7 @@ input[type="checkbox"] {
 }
 
 .schedule-list li {
-  font-family: "ThinDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-light);
   font-size: 13px;
 }
 
@@ -1343,7 +1550,7 @@ input[type="checkbox"] {
   background: var(--theme-accent);
   border: 1px solid;
   border-color: var(--theme-light) var(--theme-dark) var(--theme-dark) var(--theme-light);
-  font-family: "BoldDungGeunMo", "NeoDunggeunmo", sans-serif;
+  font-family: var(--font-bold);
   font-size: 12px;
   font-weight: 400;
 }
@@ -1366,6 +1573,16 @@ input[type="checkbox"] {
   background: var(--theme-light);
 }
 
+.calendar-day.is-adjacent {
+  opacity: 1 !important;
+  background: var(--theme-adjacent-day) !important;
+}
+
+.calendar-day.is-adjacent > span,
+.calendar-day.is-adjacent > i {
+  opacity: 0.38;
+}
+
 .calendar-day.is-selected {
   background: var(--theme-accent);
   color: var(--theme-text);
@@ -1382,4 +1599,5 @@ input[type="checkbox"] {
   border: 1px solid var(--theme-dark);
   border-radius: 0;
 }
+
 

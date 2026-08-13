@@ -1,9 +1,8 @@
 from datetime import datetime
 
 from fastapi import APIRouter, File, HTTPException, UploadFile, status
-from fastapi.responses import Response
 
-from app.core.config import DATA_DIRECTORY
+from app.core.config import DATA_DIRECTORY, DOWNLOADS_DIRECTORY
 from app.core.database import engine
 from app.services.backup import MAX_BACKUP_SIZE, create_backup_bytes, restore_backup
 
@@ -12,13 +11,11 @@ router = APIRouter(prefix="/backups", tags=["backups"])
 
 
 @router.post("/export")
-def export_backup() -> Response:
+def export_backup() -> dict[str, str]:
     filename = f"reminder-backup-{datetime.now():%Y%m%d-%H%M%S}.db"
-    return Response(
-        content=create_backup_bytes(engine),
-        media_type="application/vnd.sqlite3",
-        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
-    )
+    backup_path = DOWNLOADS_DIRECTORY / filename
+    backup_path.write_bytes(create_backup_bytes(engine))
+    return {"filename": filename, "path": str(backup_path)}
 
 
 @router.post("/import", status_code=status.HTTP_204_NO_CONTENT)

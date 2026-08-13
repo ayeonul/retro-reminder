@@ -8,3 +8,5 @@ pywebview==6.2.1
 APScheduler==3.11.3
 win11toast==0.36.3
 python-multipart==0.0.32
+pillow==12.3.0
+pyinstaller==6.19.0

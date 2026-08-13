@@ -1,5 +1,5 @@
 ﻿<template>
-  <div class="app-page" :style="cssVariables">
+  <div class="app-page" :class="{ 'use-pixel-font': usePixelFont }" :style="cssVariables">
   <main class="app-shell">
     <header class="window-bar">
       <div class="window-drag-region pywebview-drag-region"></div>
@@ -7,13 +7,10 @@
         <button type="button" aria-label="설정" title="설정" @click="openSettings">
           <img :src="settingsIcon" alt="" />
         </button>
-        <button type="button" aria-label="최소화" title="최소화">
+        <button type="button" aria-label="최소화" title="최소화" @click="minimizeWindow">
           <img :src="minimizeIcon" alt="" />
         </button>
-        <button type="button" aria-label="최대화" title="최대화">
-          <img :src="maximizeIcon" alt="" />
-        </button>
-        <button class="close-button" type="button" aria-label="닫기" title="닫기">
+        <button class="close-button" type="button" aria-label="닫기" title="닫기" @click="closeWindow">
           <img :src="closeIcon" alt="" />
         </button>
       </nav>
@@ -116,7 +113,7 @@
           </button>
           <div class="month-controls">
             <button type="button" aria-label="이전 달" @click="moveMonth(-1)"><img :src="chevronLeftIcon" alt="" /></button>
-            <span>{{ month }}/{{ selectedDay }}</span>
+            <span class="selected-month-day">{{ month }}/{{ selectedDay }}</span>
             <button type="button" aria-label="다음 달" @click="moveMonth(1)"><img :src="chevronRightIcon" alt="" /></button>
           </div>
           <small>{{ selectedDateLabel }}</small>
@@ -154,15 +151,14 @@
           :key="day.key"
           class="calendar-day"
           :class="{
-            'is-empty': !day.date,
-            'is-selected': day.date === selectedDay,
+            'is-adjacent': !day.isCurrentMonth,
+            'is-selected': day.year === year && day.month === month && day.date === selectedDay,
             'has-schedule': day.hasSchedule
           }"
           type="button"
-          :disabled="!day.date"
-          @click="selectDay(day.date)"
+          @click="selectCalendarDay(day)"
         >
-          <span v-if="day.date">{{ day.date }}</span>
+          <span>{{ day.date }}</span>
           <i v-if="day.hasSchedule" aria-label="일정 있음"></i>
         </button>
       </section>
@@ -172,7 +168,7 @@
 
   <div v-if="dialogType" class="dialog-backdrop" @mousedown.self="closeDialog">
     <form class="retro-dialog entry-dialog" @submit.prevent="submitDialog">
-      <header>{{ dialogTitle }}</header>
+      <header><span>{{ dialogTitle }}</span><button class="dialog-close" type="button" aria-label="닫기" @click="closeDialog"><img :src="closeIcon" alt="" /></button></header>
       <label v-if="dialogType !== 'contact'">
         <span>{{ dialogType === 'memo' ? '메모 제목' : '일정 제목' }}</span>
         <input ref="dialogInput" v-model="dialogForm.title" required />
@@ -211,7 +207,7 @@
 
   <div v-if="confirmDeleteType" class="dialog-backdrop" @mousedown.self="closeDeleteConfirm">
     <section class="retro-dialog delete-confirm" role="dialog" aria-modal="true" aria-label="삭제 확인">
-      <header>삭제 확인</header>
+      <header><span>삭제 확인</span><button class="dialog-close" type="button" aria-label="닫기" @click="closeDeleteConfirm"><img :src="closeIcon" alt="" /></button></header>
       <p>선택한 {{ confirmDeleteType === 'memo' ? '메모' : '연락처' }}를 삭제하시겠습니까?</p>
       <div class="dialog-buttons">
         <button type="button" @click="confirmDelete">삭제</button>
@@ -222,14 +218,18 @@
 
   <div v-if="isSettingsOpen" class="dialog-backdrop" @mousedown.self="closeSettings">
     <section class="retro-dialog settings-dialog" role="dialog" aria-modal="true" aria-label="설정">
-      <header>설정</header>
+      <header><span>설정</span><button class="dialog-close" type="button" aria-label="닫기" @click="closeSettings"><img :src="closeIcon" alt="" /></button></header>
       <section class="settings-section" aria-labelledby="accent-color-title">
         <div class="settings-section-heading">
           <div>
-            <h2 id="accent-color-title">주조색</h2>
-            <p>앱 전체에 적용할 기본 색상입니다.</p>
-          </div>
-          <span class="accent-color-preview" :style="{ backgroundColor: settingsAccentColor }" aria-hidden="true"></span>
+            <h2 id="accent-color-title">테마 설정</h2>
+            <label class="pixel-font-option">
+              <span>픽셀 폰트 사용</span>
+              <input type="checkbox" :checked="usePixelFont" @change="setUsePixelFont($event.target.checked)" />
+              </label>
+              <p>앱 전체에 적용할 기본 색상입니다.</p>
+              <p class="theme-restart-hint">아이콘 색상은 프로그램을 다시 실행하면 적용됩니다.</p>
+            </div>
         </div>
         <div class="settings-picker">
           <ChromePicker v-model="settingsAccentColor" :disable-alpha="true" @update:modelValue="updateAccentColor" />
@@ -248,15 +248,41 @@
           <input ref="backupFileInput" type="file" accept=".db,application/vnd.sqlite3,application/octet-stream" @change="selectBackupFile" />
         </div>
       </section>
+      <button class="license-link" type="button" @click="openLicenses">오픈소스 라이선스</button>
       <div class="dialog-buttons">
         <button type="button" @click="closeSettings">닫기</button>
       </div>
     </section>
   </div>
 
+  <div v-if="isLicenseOpen" class="dialog-backdrop" @mousedown.self="closeLicenses">
+    <section class="retro-dialog licenses-dialog" role="dialog" aria-modal="true" aria-label="오픈소스 라이선스">
+        <header><span>오픈소스 라이선스</span><button class="dialog-close" type="button" aria-label="닫기" @click="closeLicenses"><img :src="closeIcon" alt="" /></button></header>
+        <p class="license-intro">이 앱에서 사용하는 오픈소스 및 글꼴입니다.</p>
+        <div class="license-scroll-shell">
+          <div ref="licenseList" class="license-list" @scroll="updateLicenseScroll">
+            <section v-for="group in licenseGroups" :key="group.name">
+              <h2>{{ group.name }}</h2>
+              <div v-for="license in group.items" :key="license.name" class="license-item">
+                <span>{{ license.name }}</span>
+                <small>{{ license.license }}<template v-if="license.creator"> · 제작자: {{ license.creator }}</template></small>
+              </div>
+            </section>
+          </div>
+          <div class="retro-scrollbar" :class="{ 'is-hidden': !licenseScrollbarVisible }" aria-hidden="true">
+            <button type="button" tabindex="-1" @click="scrollLicenses(-48)"><img :src="chevronUpIcon" alt="" /></button>
+            <div ref="licenseTrack" class="retro-scroll-track" @click="jumpLicenseScroll($event)">
+              <div class="retro-scroll-thumb" :style="licenseThumbStyle"></div>
+            </div>
+            <button type="button" tabindex="-1" @click="scrollLicenses(48)"><img :src="chevronDownIcon" alt="" /></button>
+          </div>
+        </div>
+    </section>
+  </div>
+
   <div v-if="backupImportFile" class="dialog-backdrop" @mousedown.self="cancelBackupImport">
     <section class="retro-dialog delete-confirm" role="dialog" aria-modal="true" aria-label="데이터 불러오기 확인">
-      <header>데이터 불러오기</header>
+      <header><span>데이터 불러오기</span><button class="dialog-close" type="button" aria-label="닫기" @click="cancelBackupImport"><img :src="closeIcon" alt="" /></button></header>
       <p><strong>{{ backupImportFile.name }}</strong> 파일로 현재 데이터를 교체하시겠습니까?</p>
       <div class="dialog-buttons">
         <button type="button" @click="confirmBackupImport">불러오기</button>
@@ -278,7 +304,6 @@ import { ChromePicker } from 'vue-color'
 import 'vue-color/style.css'
 import settingsIcon from 'pixelarticons/svg/settings-cog.svg'
 import minimizeIcon from 'pixelarticons/svg/minus.svg'
-import maximizeIcon from 'pixelarticons/svg/expand.svg'
 import closeIcon from 'pixelarticons/svg/close.svg'
 import trashIcon from 'pixelarticons/svg/trash.svg'
 import chevronDownIcon from 'pixelarticons/svg/chevron-down.svg'
@@ -299,20 +324,61 @@ export default {
   data() {
     return {
       isMemoOpen: true,
-      isContactOpen: true,
-      expandedMemoIds: [],
-      sidebarHeight: 0,
-      resizeObserver: null,
+        isContactOpen: true,
+        expandedMemoIds: [],
+        sidebarHeight: 0,
+        resizeObserver: null,
+        licenseScrollTop: 0,
+        licenseScrollHeight: 0,
+        licenseClientHeight: 0,
+        todayKey: '',
+        dateChangeTimer: null,
       dialogType: null,
       isSettingsOpen: false,
+      isLicenseOpen: false,
       settingsAccentColor: '#ffdbd9',
       backupImportFile: null,
+      licenseGroups: [
+        {
+          name: '프론트엔드',
+          items: [
+            { name: 'Vue', license: 'MIT License' },
+            { name: 'Pinia', license: 'MIT License' },
+            { name: 'Axios', license: 'MIT License' },
+            { name: 'Vue Color', license: 'MIT License' },
+            { name: 'Pixelarticons', license: 'MIT License' },
+            { name: 'core-js', license: 'MIT License' }
+          ]
+        },
+        {
+          name: '백엔드',
+          items: [
+            { name: 'FastAPI', license: 'MIT License' },
+            { name: 'Uvicorn', license: 'BSD 3-Clause License' },
+            { name: 'SQLAlchemy', license: 'MIT License' },
+            { name: 'Pydantic Settings', license: 'MIT License' },
+            { name: 'HTTPX', license: 'BSD 3-Clause License' },
+            { name: 'pywebview', license: 'BSD 3-Clause License' },
+            { name: 'APScheduler', license: 'MIT License' },
+            { name: 'win11toast', license: 'MIT License' },
+            { name: 'python-multipart', license: 'Apache License 2.0' }
+          ]
+        },
+        {
+          name: '글꼴',
+          items: [
+            { name: 'Paperlogy', license: 'SIL Open Font License 1.1' },
+              { name: 'Neo둥근모', license: 'SIL Open Font License 1.1', creator: 'Eunbin Jeong (Dalgona)' },
+              { name: '얇은둥근모 v0.1', license: '퍼블릭 도메인 · 제작자 고지', creator: 'sawalk' },
+              { name: '굵은둥근모 v0.2', license: '퍼블릭 도메인 · 제작자 고지', creator: 'sawalk' }
+          ]
+        }
+      ],
       deleteMode: null,
       confirmDeleteType: null,
       dialogForm: { title: '', content: '', name: '', phone: '', time: '09:00' },
       settingsIcon,
       minimizeIcon,
-      maximizeIcon,
       closeIcon,
       trashIcon,
       chevronDownIcon,
@@ -342,21 +408,32 @@ export default {
     ...mapState(useReminderStore, ['year', 'month', 'selectedDay', 'schedules', 'selectedSchedules', 'selectedDateLabel']),
     ...mapState(useMemoStore, { memos: 'memos', memoSelectedIds: 'selectedIds' }),
     ...mapState(useContactStore, { contacts: 'contacts', contactSelectedIds: 'selectedIds' }),
-    ...mapState(useThemeStore, ['accentColor', 'cssVariables']),
+    ...mapState(useThemeStore, ['accentColor', 'cssVariables', 'usePixelFont']),
     dialogTitle() {
       return this.dialogType === 'memo' ? '메모 추가' : this.dialogType === 'contact' ? '연락처 추가' : '일정 추가'
     },
     scheduleScrollbarVisible() {
       return this.scheduleScrollHeight > this.scheduleClientHeight
     },
-    scheduleThumbStyle() {
+      scheduleThumbStyle() {
       if (!this.scheduleScrollbarVisible) return {}
       const thumbHeight = Math.max(18, (this.scheduleClientHeight / this.scheduleScrollHeight) * 100)
       const maxScrollTop = this.scheduleScrollHeight - this.scheduleClientHeight
       const top = (this.scheduleScrollTop / maxScrollTop) * (100 - thumbHeight)
 
-      return { height: `${thumbHeight}%`, top: `${top}%` }
-    },
+        return { height: `${thumbHeight}%`, top: `${top}%` }
+      },
+      licenseScrollbarVisible() {
+        return this.licenseScrollHeight > this.licenseClientHeight
+      },
+      licenseThumbStyle() {
+        if (!this.licenseScrollbarVisible) return {}
+        const thumbHeight = Math.max(18, (this.licenseClientHeight / this.licenseScrollHeight) * 100)
+        const maxScrollTop = this.licenseScrollHeight - this.licenseClientHeight
+        const top = (this.licenseScrollTop / maxScrollTop) * (100 - thumbHeight)
+
+        return { height: `${thumbHeight}%`, top: `${top}%` }
+      },
     memoTextareaScrollbarVisible() {
       return this.memoTextareaScrollHeight > this.memoTextareaClientHeight
     },
@@ -404,26 +481,31 @@ export default {
     },
     calendarDays() {
       const firstDayOffset = new Date(this.year, this.month - 1, 1).getDay()
-      const daysInMonth = new Date(this.year, this.month, 0).getDate()
       const totalCells = 42
 
       return Array.from({ length: totalCells }, (_, index) => {
-        const date = index - firstDayOffset + 1
-        const isCurrentMonth = date > 0 && date <= daysInMonth
+        const cellDate = new Date(this.year, this.month - 1, 1 - firstDayOffset + index)
+        const year = cellDate.getFullYear()
+        const month = cellDate.getMonth() + 1
+        const date = cellDate.getDate()
+        const isCurrentMonth = year === this.year && month === this.month
 
         return {
           key: index,
-          date: isCurrentMonth ? date : null,
-          hasSchedule: isCurrentMonth && this.schedules.some((schedule) => (
-            schedule.year === this.year && schedule.month === this.month && schedule.day === date
+          year,
+          month,
+          date,
+          isCurrentMonth,
+          hasSchedule: this.schedules.some((schedule) => (
+            schedule.year === year && schedule.month === month && schedule.day === date
           ))
         }
       })
     }
   },
   methods: {
-    ...mapActions(useReminderStore, ['selectDay', 'moveMonth', 'goToToday', 'addSchedule', 'toggleScheduleAlert', 'deleteSchedule', 'loadSchedules']),
-    ...mapActions(useThemeStore, ['setAccentColor', 'loadSettings']),
+    ...mapActions(useReminderStore, ['selectDay', 'selectDate', 'moveMonth', 'goToToday', 'addSchedule', 'toggleScheduleAlert', 'deleteSchedule', 'loadSchedules']),
+    ...mapActions(useThemeStore, ['setAccentColor', 'setUsePixelFont', 'loadSettings']),
     ...mapActions(useMemoStore, { addMemo: 'addMemo', loadMemos: 'loadMemos', toggleMemoSelection: 'toggleSelection', deleteSelectedMemos: 'deleteSelected', clearMemoSelection: 'clearSelection' }),
     ...mapActions(useContactStore, { addContact: 'addContact', loadContacts: 'loadContacts', toggleContactSelection: 'toggleSelection', deleteSelectedContacts: 'deleteSelected', clearContactSelection: 'clearSelection' }),
     startDeleteMode(type) {
@@ -457,6 +539,12 @@ export default {
     closeDialog() {
       this.dialogType = null
     },
+    minimizeWindow() {
+      window.pywebview?.api?.minimize_window()
+    },
+    closeWindow() {
+      window.pywebview?.api?.close_window()
+    },
     openSettings() {
       this.settingsAccentColor = this.accentColor
       this.isSettingsOpen = true
@@ -464,15 +552,21 @@ export default {
     closeSettings() {
       this.isSettingsOpen = false
     },
+      openLicenses() {
+        this.isSettingsOpen = false
+        this.isLicenseOpen = true
+        this.$nextTick(this.updateLicenseScroll)
+    },
+    closeLicenses() {
+      this.isLicenseOpen = false
+    },
     async exportBackup() {
-      const response = await apiClient.post('/backups/export', null, { responseType: 'blob' })
-      const filename = `reminder-backup-${new Date().toISOString().slice(0, 10)}.db`
-      const url = URL.createObjectURL(response.data)
-      const link = document.createElement('a')
-      link.href = url
-      link.download = filename
-      link.click()
-      URL.revokeObjectURL(url)
+      try {
+        const response = await apiClient.post('/backups/export')
+        window.alert(`백업 파일을 다운로드 폴더에 저장했습니다.\n${response.data.path}`)
+      } catch (error) {
+        window.alert(error.response?.data?.detail || '백업 파일을 저장하지 못했습니다.')
+      }
     },
     openBackupFilePicker() {
       this.$refs.backupFileInput.click()
@@ -514,11 +608,28 @@ export default {
       if (this.dialogType === 'schedule') await this.addSchedule(this.dialogForm.title, this.dialogForm.time)
       this.closeDialog()
     },
+    async selectCalendarDay(day) {
+      if (day.isCurrentMonth) {
+        this.selectDay(day.date)
+        return
+      }
+
+      await this.selectDate(day.year, day.month, day.date)
+    },
     sanitizePhone() {
       this.dialogForm.phone = this.dialogForm.phone.replace(/[^0-9+-]/g, '')
     },
-    async initializeData() {
-      await Promise.all([this.loadMemos(), this.loadContacts(), this.loadSchedules(), this.loadSettings()])
+      async initializeData() {
+        this.todayKey = new Date().toDateString()
+        await Promise.all([this.loadMemos(), this.loadContacts(), this.loadSettings()])
+        await this.goToToday()
+      },
+      async resetToTodayOnDateChange() {
+        const todayKey = new Date().toDateString()
+        if (todayKey === this.todayKey) return
+
+        this.todayKey = todayKey
+        await this.goToToday()
     },
     toggleMemoExpanded(id) {
       this.expandedMemoIds = this.expandedMemoIds.includes(id)
@@ -532,13 +643,30 @@ export default {
         this.updateSidebarListScroll('contact')
       })
     },
-    updateScheduleScroll() {
+      updateScheduleScroll() {
       const list = this.$refs.scheduleList
       if (!list) return
       this.scheduleScrollTop = list.scrollTop
       this.scheduleScrollHeight = list.scrollHeight
-      this.scheduleClientHeight = list.clientHeight
-    },
+        this.scheduleClientHeight = list.clientHeight
+      },
+      updateLicenseScroll() {
+        const list = this.$refs.licenseList
+        if (!list) return
+        this.licenseScrollTop = list.scrollTop
+        this.licenseScrollHeight = list.scrollHeight
+        this.licenseClientHeight = list.clientHeight
+      },
+      scrollLicenses(offset) {
+        this.$refs.licenseList?.scrollBy({ top: offset, behavior: 'smooth' })
+      },
+      jumpLicenseScroll(event) {
+        const track = this.$refs.licenseTrack
+        const list = this.$refs.licenseList
+        if (!track || !list) return
+        const ratio = (event.clientY - track.getBoundingClientRect().top) / track.clientHeight
+        list.scrollTop = ratio * (list.scrollHeight - list.clientHeight)
+      },
     updateMemoTextareaScroll() {
       const textarea = this.$refs.memoContentInput
       if (!textarea) return
@@ -594,21 +722,24 @@ export default {
   },
   mounted() {
     this.updateSidebarHeight()
-    this.resizeObserver = new ResizeObserver(this.updateSidebarHeight)
-    this.resizeObserver.observe(this.$refs.sidebar)
-    this.initializeData()
-    this.$nextTick(this.updateScheduleScroll)
+      this.resizeObserver = new ResizeObserver(this.updateSidebarHeight)
+      this.resizeObserver.observe(this.$refs.sidebar)
+      this.initializeData()
+      this.dateChangeTimer = window.setInterval(this.resetToTodayOnDateChange, 60000)
+      this.$nextTick(this.updateScheduleScroll)
   },
-  updated() {
-    this.$nextTick(this.updateScheduleScroll)
+    updated() {
+      this.$nextTick(this.updateScheduleScroll)
+      this.$nextTick(this.updateLicenseScroll)
     this.$nextTick(this.updateMemoTextareaScroll)
     this.$nextTick(() => {
       this.updateSidebarListScroll('memo')
       this.updateSidebarListScroll('contact')
     })
   },
-  beforeUnmount() {
-    this.resizeObserver.disconnect()
+    beforeUnmount() {
+      this.resizeObserver.disconnect()
+      window.clearInterval(this.dateChangeTimer)
   }
 }
 </script>
