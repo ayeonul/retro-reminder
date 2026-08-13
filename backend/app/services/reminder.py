@@ -1,5 +1,5 @@
 import logging
-from datetime import datetime, timedelta
+from datetime import datetime
 from typing import Protocol
 
 from sqlalchemy import select
@@ -10,9 +10,6 @@ from app.services.backup import DATABASE_LOCK
 
 
 logger = logging.getLogger(__name__)
-MISSED_REMINDER_GRACE_PERIOD = timedelta(hours=24)
-
-
 class Notifier(Protocol):
     def send(self, title: str, message: str) -> bool:
         pass
@@ -24,7 +21,7 @@ def process_due_schedules(
     now: datetime | None = None,
 ) -> int:
     checked_at = now or datetime.now()
-    earliest_due_at = checked_at - MISSED_REMINDER_GRACE_PERIOD
+    current_minute = checked_at.replace(second=0, microsecond=0)
     sent_count = 0
 
     with DATABASE_LOCK:
@@ -37,7 +34,7 @@ def process_due_schedules(
 
             for schedule in schedules:
                 due_at = datetime.combine(schedule.date, schedule.time)
-                if not earliest_due_at <= due_at <= checked_at:
+                if due_at.replace(second=0, microsecond=0) != current_minute:
                     continue
                 if notifier.send("Reminder", f"{schedule.title} · {schedule.time.strftime('%H:%M')}"):
                     schedule.notified_at = checked_at

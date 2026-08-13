@@ -89,6 +89,29 @@ def test_reminder_marks_a_sent_schedule():
         assert client.delete(f"/api/schedules/{schedule_id}").status_code == 204
 
 
+def test_reminder_does_not_send_a_past_schedule():
+    class FakeNotifier:
+        def send(self, title: str, message: str) -> bool:
+            raise AssertionError("지난 일정은 알림을 보내면 안 됩니다.")
+
+    now = datetime(2026, 8, 13, 14, 45)
+    with TestClient(app) as client:
+        schedule = client.post(
+            "/api/schedules",
+            json={
+                "date": "2026-08-13",
+                "time": "09:00:00",
+                "title": "지난 일정",
+                "alert_enabled": True,
+            },
+        )
+        schedule_id = schedule.json()["id"]
+
+        assert process_due_schedules(SessionLocal, FakeNotifier(), now=now) == 0
+        assert client.get("/api/schedules", params={"date": "2026-08-13"}).json()[0]["notified_at"] is None
+        assert client.delete(f"/api/schedules/{schedule_id}").status_code == 204
+
+
 def test_backup_export_and_import():
     with TestClient(app) as client:
         client.post("/api/memos", json={"title": "백업 대상", "content": "보존할 내용"})
