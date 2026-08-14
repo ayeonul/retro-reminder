@@ -178,12 +178,12 @@
       <header><span>{{ dialogTitle }}</span><button class="dialog-close" type="button" aria-label="닫기" @click="closeDialog"><img :src="closeIcon" alt="" /></button></header>
       <label v-if="dialogType !== 'contact'">
         <span>{{ dialogType === 'memo' ? '메모 제목' : '일정 제목' }}</span>
-        <input ref="dialogInput" v-model="dialogForm.title" required />
+        <input ref="dialogInput" v-model="dialogForm.title" spellcheck="false" required />
       </label>
       <label v-if="dialogType === 'memo'">
         <span>내용 <small>(선택)</small></span>
         <div class="memo-textarea-shell">
-          <textarea ref="memoContentInput" v-model="dialogForm.content" rows="4" @scroll="updateMemoTextareaScroll"></textarea>
+          <textarea ref="memoContentInput" v-model="dialogForm.content" rows="4" spellcheck="false" @scroll="updateMemoTextareaScroll"></textarea>
           <div class="retro-textarea-scrollbar" :class="{ 'is-hidden': !memoTextareaScrollbarVisible }" aria-hidden="true">
             <button type="button" tabindex="-1" @click="scrollMemoTextarea(-36)"><img :src="chevronUpIcon" alt="" /></button>
             <div ref="memoTextareaTrack" class="retro-textarea-track" @click="jumpMemoTextareaScroll">
@@ -195,11 +195,11 @@
       </label>
       <label v-if="dialogType === 'contact'">
         <span>이름</span>
-        <input ref="dialogInput" v-model="dialogForm.name" required />
+        <input ref="dialogInput" v-model="dialogForm.name" spellcheck="false" required />
       </label>
       <label v-if="dialogType === 'contact'">
         <span>전화번호</span>
-        <input v-model="dialogForm.phone" placeholder="010-0000-0000" @input="sanitizePhone" />
+        <input v-model="dialogForm.phone" placeholder="010-0000-0000" spellcheck="false" @input="sanitizePhone" />
       </label>
       <label v-if="dialogType === 'schedule'" class="schedule-time-toggle">
         <span>하루 종일</span>
@@ -252,7 +252,7 @@
             </div>
         </div>
         <div class="settings-picker">
-          <ChromePicker v-model="settingsAccentColor" :disable-alpha="true" @update:modelValue="updateAccentColor" />
+            <ChromePicker v-model="settingsAccentColor" :disable-alpha="true" :formats="['hex']" @update:modelValue="updateAccentColor" />
         </div>
       </section>
       <section class="settings-section backup-section" aria-labelledby="backup-title">
@@ -615,12 +615,14 @@ export default {
       const { direction, startX, startY, startWidth, startHeight, startWindowX, startWindowY } = this.windowResize
       const horizontalDelta = event.screenX - startX
       const verticalDelta = event.screenY - startY
-      const width = Math.max(480, startWidth + (direction.includes('left') ? -horizontalDelta : direction.includes('right') ? horizontalDelta : 0))
-      const height = Math.max(360, startHeight + (direction.includes('top') ? -verticalDelta : direction.includes('bottom') ? verticalDelta : 0))
-      const actualWidth = Math.max(620, width)
-      const actualHeight = Math.max(400, height)
+      const width = Math.max(520, startWidth + (direction.includes('left') ? -horizontalDelta : direction.includes('right') ? horizontalDelta : 0))
+      const height = Math.max(300, startHeight + (direction.includes('top') ? -verticalDelta : direction.includes('bottom') ? verticalDelta : 0))
+      const actualWidth = Math.max(520, width)
+      const actualHeight = Math.max(300, height)
       const x = direction.includes('left') ? startWindowX + startWidth - actualWidth : startWindowX
       const y = direction.includes('top') ? startWindowY + startHeight - actualHeight : startWindowY
+      this.$el.style.setProperty('--desktop-window-width', `${actualWidth}px`)
+      this.$el.style.setProperty('--desktop-window-height', `${actualHeight}px`)
       this.pendingWindowResize = { width: actualWidth, height: actualHeight, x, y }
       if (this.resizeRequestFrame !== null) return
 
@@ -646,6 +648,7 @@ export default {
     openSettings() {
       this.settingsAccentColor = this.accentColor
       this.isSettingsOpen = true
+      this.$nextTick(this.disableSpellcheck)
     },
     closeSettings() {
       this.isSettingsOpen = false
@@ -752,6 +755,11 @@ export default {
         this.updateSidebarListScroll('contact')
       })
     },
+    disableSpellcheck() {
+      this.$el.querySelectorAll('input, textarea').forEach((element) => {
+        element.spellcheck = false
+      })
+    },
     updateCalendarCellHeight() {
       const calendar = this.$refs.calendar
       if (!calendar) return
@@ -845,10 +853,12 @@ export default {
       this.dateChangeTimer = window.setInterval(this.resetToTodayOnDateChange, 60000)
       this.$nextTick(this.updateScheduleScroll)
       this.$nextTick(this.updateCalendarCellHeight)
+      this.$nextTick(this.disableSpellcheck)
   },
     updated() {
       this.$nextTick(this.updateScheduleScroll)
       this.$nextTick(this.updateLicenseScroll)
+      this.$nextTick(this.disableSpellcheck)
     this.$nextTick(this.updateMemoTextareaScroll)
     this.$nextTick(() => {
       this.updateSidebarListScroll('memo')

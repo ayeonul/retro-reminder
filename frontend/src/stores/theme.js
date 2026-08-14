@@ -89,6 +89,25 @@ function isAchromatic(hsv) {
   return hsv.saturation < 0.01
 }
 
+function relativeLuminance(hex) {
+  const { red, green, blue } = hexToRgb(hex)
+  const channels = [red, green, blue].map((channel) => {
+    const normalized = channel / 255
+    return normalized <= 0.04045
+      ? normalized / 12.92
+      : ((normalized + 0.055) / 1.055) ** 2.4
+  })
+
+  return channels[0] * 0.2126 + channels[1] * 0.7152 + channels[2] * 0.0722
+}
+
+function contrastRatio(firstColor, secondColor) {
+  const firstLuminance = relativeLuminance(firstColor)
+  const secondLuminance = relativeLuminance(secondColor)
+
+  return (Math.max(firstLuminance, secondLuminance) + 0.05) / (Math.min(firstLuminance, secondLuminance) + 0.05)
+}
+
 function deriveColor(baseColor, saturationOffset, valueOffset) {
   const { red, green, blue } = hexToRgb(baseColor)
   const hsv = rgbToHsv(red, green, blue)
@@ -124,6 +143,22 @@ function deriveTitleTextColor(baseColor) {
 
   const rgb = hsvToRgb(hsv.hue, 0.78, 0.32)
   return rgbToHex(rgb.red, rgb.green, rgb.blue)
+}
+
+function deriveDateTextColor(baseColor) {
+  const { red, green, blue } = hexToRgb(baseColor)
+  const hsv = rgbToHsv(red, green, blue)
+
+  if (hsv.value < 0.72 || isAchromatic(hsv)) {
+    return deriveTitleTextColor(baseColor)
+  }
+
+  const pastelDateText = deriveHueColor(baseColor, 0.5, 1)
+  if (contrastRatio(baseColor, pastelDateText) >= 1.65) {
+    return pastelDateText
+  }
+
+  return deriveHueColor(baseColor, 0.72, 0.45)
 }
 
 function deriveTextColor(baseColor) {
@@ -207,7 +242,7 @@ export const useThemeStore = defineStore('theme', {
       '--theme-title-dark': deriveColor(state.accentColor, 0.38, -0.1),
       '--theme-title': deriveColor(state.accentColor, 0.2, -0.012),
       '--theme-title-muted': deriveColor(state.accentColor, 0.03, -0.25),
-      '--theme-date-text': deriveColor(state.accentColor, 0.34, -0.012),
+      '--theme-date-text': deriveDateTextColor(state.accentColor),
       '--theme-date-muted': deriveMutedTextColor(state.accentColor),
       '--theme-date-active': deriveAlertActiveColor(state.accentColor),
       '--theme-title-text': deriveTitleTextColor(state.accentColor),

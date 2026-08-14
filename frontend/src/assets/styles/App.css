@@ -199,6 +199,7 @@ button {
 .workspace {
   display: grid;
   min-height: 0;
+  overflow: hidden;
   grid-template-columns: minmax(240px, 0.9fr) minmax(440px, 1.35fr);
 }
 
@@ -293,6 +294,7 @@ button {
 
 .calendar-area {
   display: grid;
+  min-height: 0;
   min-width: 0;
   grid-template-rows: 112px minmax(0, 1fr);
 }
@@ -364,7 +366,7 @@ button {
 .calendar {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
-  grid-template-rows: 32px repeat(6, minmax(55px, 1fr));
+  grid-template-rows: 32px repeat(6, minmax(0, 1fr));
   min-height: 0;
   background: #fff;
 }
@@ -839,7 +841,10 @@ input[type="checkbox"] {
 
 .selected-month-day {
   display: block;
+  position: relative;
+  top: 6px;
   width: 100%;
+  pointer-events: none;
   text-align: center;
 }
 
@@ -853,6 +858,7 @@ input[type="checkbox"] {
   place-items: center;
   color: var(--theme-text);
   transform: translateY(-50%);
+  z-index: 1;
 }
 
 .month-controls button:first-child {
@@ -1532,6 +1538,7 @@ input[type="checkbox"] {
   padding: 12px;
   min-height: 0;
   flex: 1;
+  justify-content: flex-start;
   color: var(--theme-text);
   overflow-x: hidden;
   overflow-y: auto;
@@ -1717,6 +1724,18 @@ input[type="checkbox"] {
   .selected-date .selected-month-day {
     font-size: 40px;
   }
+}
+
+.app-page {
+  width: var(--desktop-window-width, 100vw);
+  height: var(--desktop-window-height, 100vh);
+  min-height: 0;
+}
+
+.app-shell {
+  width: 100%;
+  height: 100%;
+  min-height: 0;
 }
 
 

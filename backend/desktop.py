@@ -12,8 +12,8 @@ from app.main import app
 from app.services.app_icon import create_themed_icons, get_accent_color
 
 
-MIN_WINDOW_WIDTH = 620
-MIN_WINDOW_HEIGHT = 400
+MIN_WINDOW_WIDTH = 520
+MIN_WINDOW_HEIGHT = 300
 
 
 def create_bound_socket() -> socket.socket:
