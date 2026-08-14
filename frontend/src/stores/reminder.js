@@ -11,12 +11,19 @@ function mapSchedule(schedule) {
 
   return {
     ...schedule,
-    time: schedule.time.slice(0, 5),
+    time: schedule.time ? schedule.time.slice(0, 5) : null,
     year,
     month,
     day,
     alertEnabled: schedule.alert_enabled
   }
+}
+
+function sortSchedules(schedules) {
+  return schedules.sort((first, second) => (
+    `${first.year}-${String(first.month).padStart(2, '0')}-${String(first.day).padStart(2, '0')}-${first.time || ''}`
+      .localeCompare(`${second.year}-${String(second.month).padStart(2, '0')}-${String(second.day).padStart(2, '0')}-${second.time || ''}`)
+  ))
 }
 
 export const useReminderStore = defineStore('reminder', {
@@ -27,9 +34,9 @@ export const useReminderStore = defineStore('reminder', {
     schedules: []
   }),
   getters: {
-    selectedSchedules: (state) => state.schedules.filter((schedule) => (
+    selectedSchedules: (state) => sortSchedules(state.schedules.filter((schedule) => (
       schedule.year === state.year && schedule.month === state.month && schedule.day === state.selectedDay
-    )),
+    ))),
     selectedDateLabel: (state) => {
       const weekdays = ['일', '월', '화', '수', '목', '금', '토']
       const weekday = weekdays[new Date(state.year, state.month - 1, state.selectedDay).getDay()]
@@ -50,7 +57,7 @@ export const useReminderStore = defineStore('reminder', {
           to: formatDate(rangeEnd.getFullYear(), rangeEnd.getMonth() + 1, rangeEnd.getDate())
         }
       })
-      this.schedules = data.map(mapSchedule)
+      this.schedules = sortSchedules(data.map(mapSchedule))
     },
     selectDay(day) {
       this.selectedDay = day
@@ -75,14 +82,15 @@ export const useReminderStore = defineStore('reminder', {
       this.selectedDay = today.getDate()
       await this.loadSchedules()
     },
-    async addSchedule(title, time) {
+    async addSchedule(title, time = null) {
       const { data } = await apiClient.post('/schedules', {
         date: formatDate(this.year, this.month, this.selectedDay),
-        time: time || '09:00',
+        time,
         title: title.trim(),
         alert_enabled: false
       })
       this.schedules.push(mapSchedule(data))
+      sortSchedules(this.schedules)
     },
     async toggleScheduleAlert(id) {
       const schedule = this.schedules.find((item) => item.id === id)

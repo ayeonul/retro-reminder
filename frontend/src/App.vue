@@ -126,9 +126,9 @@
         <div class="schedule-scroll-shell">
         <ul ref="scheduleList" class="schedule-list" @scroll="updateScheduleScroll">
           <li v-for="schedule in selectedSchedules" :key="schedule.id" class="schedule-item">
-            <span class="schedule-time">{{ schedule.time }}</span>
+              <span v-if="schedule.time" class="schedule-time">{{ schedule.time }}</span>
             <span class="schedule-title">{{ schedule.title }}</span>
-            <button class="schedule-alert-button" type="button" :aria-label="schedule.alertEnabled ? '알림 끄기' : '알림 켜기'" @click="toggleScheduleAlert(schedule.id)">
+            <button v-if="schedule.time" class="schedule-alert-button" type="button" :aria-label="schedule.alertEnabled ? '알림 끄기' : '알림 켜기'" @click="toggleScheduleAlert(schedule.id)">
               <span :class="{ 'is-active': schedule.alertEnabled }" :style="{ maskImage: `url(${schedule.alertEnabled ? bellIcon : bellOffIcon})` }"></span>
             </button>
             <button class="schedule-delete-button" type="button" aria-label="일정 삭제" @click="deleteSchedule(schedule.id)">
@@ -149,7 +149,7 @@
         </div>
       </header>
 
-      <section class="calendar" aria-label="2026년 8월 달력">
+      <section ref="calendar" class="calendar" aria-label="2026년 8월 달력">
         <div v-for="day in weekdays" :key="day" class="weekday">{{ day }}</div>
         <button
           v-for="day in calendarDays"
@@ -157,14 +157,16 @@
           class="calendar-day"
           :class="{
             'is-adjacent': !day.isCurrentMonth,
-            'is-selected': day.year === year && day.month === month && day.date === selectedDay,
-            'has-schedule': day.hasSchedule
+            'is-selected': day.year === year && day.month === month && day.date === selectedDay
           }"
           type="button"
           @click="selectCalendarDay(day)"
         >
           <span>{{ day.date }}</span>
-          <i v-if="day.hasSchedule" aria-label="일정 있음"></i>
+          <div v-if="day.schedules.length" class="calendar-schedule-list">
+            <span v-for="schedule in day.visibleSchedules" :key="schedule.id" class="calendar-schedule-title" :title="schedule.title">{{ schedule.title }}</span>
+            <span v-if="day.hiddenScheduleCount" class="calendar-schedule-more">+{{ day.hiddenScheduleCount }}</span>
+          </div>
         </button>
       </section>
       </section>
@@ -199,10 +201,23 @@
         <span>전화번호</span>
         <input v-model="dialogForm.phone" placeholder="010-0000-0000" @input="sanitizePhone" />
       </label>
-      <label v-if="dialogType === 'schedule'">
-        <span>시간</span>
-        <input v-model="dialogForm.time" type="time" required />
+      <label v-if="dialogType === 'schedule'" class="schedule-time-toggle">
+        <span>하루 종일</span>
+        <input v-model="dialogForm.allDay" type="checkbox" />
       </label>
+      <div v-if="dialogType === 'schedule' && !dialogForm.allDay" class="schedule-time-picker" aria-label="시간 선택">
+        <span>시간</span>
+        <select v-model="dialogForm.timePeriod" aria-label="오전 또는 오후">
+          <option value="am">오전</option>
+          <option value="pm">오후</option>
+        </select>
+        <select v-model="dialogForm.timeHour" aria-label="시">
+          <option v-for="hour in scheduleHourOptions" :key="hour" :value="hour">{{ hour }}시</option>
+        </select>
+        <select v-model="dialogForm.timeMinute" aria-label="분">
+          <option v-for="minute in scheduleMinuteOptions" :key="minute" :value="minute">{{ minute }}분</option>
+        </select>
+      </div>
       <div class="dialog-buttons">
         <button type="submit">확인</button>
         <button type="button" @click="closeDialog">취소</button>
@@ -333,6 +348,8 @@ export default {
         expandedMemoIds: [],
         sidebarHeight: 0,
         resizeObserver: null,
+        calendarResizeObserver: null,
+        calendarCellHeight: 0,
         windowResize: null,
         resizeRequestFrame: null,
         pendingWindowResize: null,
@@ -386,7 +403,7 @@ export default {
       ],
       deleteMode: null,
       confirmDeleteType: null,
-      dialogForm: { title: '', content: '', name: '', phone: '', time: '09:00' },
+         dialogForm: { title: '', content: '', name: '', phone: '', allDay: true, timePeriod: 'am', timeHour: '09', timeMinute: '00' },
       settingsIcon,
       minimizeIcon,
       closeIcon,
@@ -467,6 +484,17 @@ export default {
     contactThumbStyle() {
       return this.sidebarListThumbStyle('contact')
     },
+    scheduleDisplayRows() {
+      return Math.max(0, Math.floor((this.calendarCellHeight - 28) / 12))
+    },
+    scheduleHourOptions() {
+      return this.dialogForm.timePeriod === 'pm'
+        ? ['12', ...Array.from({ length: 11 }, (_, index) => String(index + 1).padStart(2, '0'))]
+        : Array.from({ length: 12 }, (_, index) => String(index).padStart(2, '0'))
+    },
+    scheduleMinuteOptions() {
+      return Array.from({ length: 12 }, (_, index) => String(index * 5).padStart(2, '0'))
+    },
     sidebarStyle() {
       if (!this.sidebarHeight) {
         return {}
@@ -500,15 +528,24 @@ export default {
         const date = cellDate.getDate()
         const isCurrentMonth = year === this.year && month === this.month
 
+        const schedules = this.schedules.filter((schedule) => (
+          schedule.year === year && schedule.month === month && schedule.day === date
+        ))
+
+        const displayRows = this.scheduleDisplayRows
+        const visibleSchedules = schedules.length <= displayRows
+          ? schedules
+          : displayRows >= 2 ? schedules.slice(0, displayRows - 1) : []
+
         return {
           key: index,
           year,
           month,
           date,
           isCurrentMonth,
-          hasSchedule: this.schedules.some((schedule) => (
-            schedule.year === year && schedule.month === month && schedule.day === date
-          ))
+          schedules,
+          visibleSchedules,
+          hiddenScheduleCount: schedules.length - visibleSchedules.length
         }
       })
     }
@@ -543,7 +580,7 @@ export default {
     },
     openDialog(type) {
       this.dialogType = type
-      this.dialogForm = { title: '', content: '', name: '', phone: '', time: '09:00' }
+       this.dialogForm = { title: '', content: '', name: '', phone: '', allDay: true, timePeriod: 'am', timeHour: '09', timeMinute: '00' }
       this.$nextTick(() => this.$refs.dialogInput.focus())
     },
     closeDialog() {
@@ -663,12 +700,23 @@ export default {
       this.settingsAccentColor = hex
       await this.setAccentColor(hex)
     },
-    async submitDialog() {
+      async submitDialog() {
       if (this.dialogType === 'memo') await this.addMemo(this.dialogForm.title, this.dialogForm.content)
       if (this.dialogType === 'contact') await this.addContact(this.dialogForm.name, this.dialogForm.phone)
-      if (this.dialogType === 'schedule') await this.addSchedule(this.dialogForm.title, this.dialogForm.time)
-      this.closeDialog()
-    },
+      if (this.dialogType === 'schedule') {
+         await this.addSchedule(this.dialogForm.title, this.dialogForm.allDay ? null : this.getSelectedScheduleTime())
+      }
+        this.closeDialog()
+      },
+      getSelectedScheduleTime() {
+        const { timePeriod, timeHour, timeMinute } = this.dialogForm
+        const hour = Number(timeHour)
+        const normalizedHour = timePeriod === 'pm'
+          ? hour === 12 ? 12 : hour + 12
+          : hour
+
+        return `${String(normalizedHour).padStart(2, '0')}:${timeMinute}`
+      },
     async selectCalendarDay(day) {
       if (day.isCurrentMonth) {
         this.selectDay(day.date)
@@ -703,6 +751,12 @@ export default {
         this.updateSidebarListScroll('memo')
         this.updateSidebarListScroll('contact')
       })
+    },
+    updateCalendarCellHeight() {
+      const calendar = this.$refs.calendar
+      if (!calendar) return
+      const weekdayHeight = calendar.querySelector('.weekday')?.offsetHeight || 0
+      this.calendarCellHeight = Math.max(0, (calendar.clientHeight - weekdayHeight) / 6)
     },
       updateScheduleScroll() {
       const list = this.$refs.scheduleList
@@ -785,9 +839,12 @@ export default {
     this.updateSidebarHeight()
       this.resizeObserver = new ResizeObserver(this.updateSidebarHeight)
       this.resizeObserver.observe(this.$refs.sidebar)
+      this.calendarResizeObserver = new ResizeObserver(this.updateCalendarCellHeight)
+      this.calendarResizeObserver.observe(this.$refs.calendar)
       this.initializeData()
       this.dateChangeTimer = window.setInterval(this.resetToTodayOnDateChange, 60000)
       this.$nextTick(this.updateScheduleScroll)
+      this.$nextTick(this.updateCalendarCellHeight)
   },
     updated() {
       this.$nextTick(this.updateScheduleScroll)
@@ -800,6 +857,7 @@ export default {
   },
     beforeUnmount() {
       this.resizeObserver.disconnect()
+      this.calendarResizeObserver.disconnect()
       window.clearInterval(this.dateChangeTimer)
       this.stopWindowResize()
       if (this.resizeRequestFrame !== null) window.cancelAnimationFrame(this.resizeRequestFrame)

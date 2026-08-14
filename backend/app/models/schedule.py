@@ -12,7 +12,7 @@ class Schedule(Base):
 
     id: Mapped[int] = mapped_column(primary_key=True)
     date: Mapped[date] = mapped_column(Date, index=True)
-    time: Mapped[time] = mapped_column(Time)
+    time: Mapped[time | None] = mapped_column(Time, nullable=True)
     title: Mapped[str] = mapped_column(String(200))
     alert_enabled: Mapped[bool] = mapped_column(Boolean, default=False)
     notified_at: Mapped[datetime | None] = mapped_column(DateTime, nullable=True)

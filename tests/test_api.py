@@ -4,6 +4,8 @@ import tempfile
 from datetime import datetime
 from pathlib import Path
 
+from sqlalchemy import create_engine, inspect, text
+
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "backend"))
 test_database = Path(tempfile.gettempdir()) / "reminder_api_test.db"
@@ -18,6 +20,7 @@ from fastapi.testclient import TestClient
 from app.main import app
 from app.core.database import SessionLocal
 from app.services.reminder import process_due_schedules
+from app.core.migrations import migrate_schedule_time_column
 
 
 def test_api_crud_flow():
@@ -129,3 +132,41 @@ def test_backup_export_and_import():
         assert restored.status_code == 204
         assert [memo["title"] for memo in client.get("/api/memos").json()] == ["백업 대상"]
         exported_path.unlink()
+
+
+def test_schedule_without_time_disables_alerts():
+    with TestClient(app) as client:
+        schedule = client.post(
+            "/api/schedules",
+            json={"date": "2026-08-13", "title": "종일 일정", "alert_enabled": True},
+        )
+        assert schedule.status_code == 201
+        assert schedule.json()["time"] is None
+        assert schedule.json()["alert_enabled"] is False
+
+
+def test_legacy_schedule_table_is_migrated_without_data_loss(tmp_path):
+    legacy_engine = create_engine(f"sqlite:///{(tmp_path / 'legacy.db').as_posix()}")
+    with legacy_engine.begin() as connection:
+        connection.execute(text("""
+            CREATE TABLE schedules (
+                id INTEGER PRIMARY KEY,
+                date DATE NOT NULL,
+                time TIME NOT NULL,
+                title VARCHAR(200) NOT NULL,
+                alert_enabled BOOLEAN NOT NULL,
+                notified_at DATETIME,
+                created_at DATETIME NOT NULL,
+                updated_at DATETIME NOT NULL
+            )
+        """))
+        connection.execute(text("""
+            INSERT INTO schedules VALUES
+            (1, '2026-08-13', '09:00:00', '기존 일정', 1, NULL, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+        """))
+
+    migrate_schedule_time_column(legacy_engine)
+
+    assert inspect(legacy_engine).get_columns("schedules")[2]["nullable"] is True
+    with legacy_engine.connect() as connection:
+        assert connection.execute(text("SELECT title FROM schedules")).scalar_one() == "기존 일정"

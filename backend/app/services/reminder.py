@@ -33,6 +33,8 @@ def process_due_schedules(
             )
 
             for schedule in schedules:
+                if schedule.time is None:
+                    continue
                 due_at = datetime.combine(schedule.date, schedule.time)
                 if due_at.replace(second=0, microsecond=0) != current_minute:
                     continue

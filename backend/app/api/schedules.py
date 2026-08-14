@@ -38,12 +38,15 @@ def list_schedules(
         statement = statement.where(Schedule.date >= date_from)
     if date_to:
         statement = statement.where(Schedule.date <= date_to)
-    return list(db.scalars(statement.order_by(Schedule.date, Schedule.time, Schedule.id)))
+    return list(db.scalars(statement.order_by(Schedule.date, Schedule.time.nullsfirst(), Schedule.id)))
 
 
 @router.post("", response_model=ScheduleRead, status_code=status.HTTP_201_CREATED)
 def create_schedule(payload: ScheduleCreate, db: Session = Depends(get_db)) -> Schedule:
-    schedule = Schedule(**payload.model_dump())
+    values = payload.model_dump()
+    if values["time"] is None:
+        values["alert_enabled"] = False
+    schedule = Schedule(**values)
     db.add(schedule)
     db.commit()
     db.refresh(schedule)
@@ -56,6 +59,8 @@ def update_schedule(schedule_id: int, payload: ScheduleUpdate, db: Session = Dep
     changes = payload.model_dump(exclude_unset=True)
     for field, value in changes.items():
         setattr(schedule, field, value)
+    if schedule.time is None:
+        schedule.alert_enabled = False
     if {"date", "time", "alert_enabled"}.intersection(changes):
         schedule.notified_at = None
     db.commit()

@@ -10,6 +10,7 @@ from fastapi.staticfiles import StaticFiles
 from app.api import backups, contacts, memos, schedules, settings
 from app.core.database import Base, engine
 from app.core.database import SessionLocal
+from app.core.migrations import migrate_schedule_time_column
 from app.services.notifier import WindowsNotifier
 from app.services.reminder import process_due_schedules
 import app.models
@@ -17,6 +18,8 @@ import app.models
 
 @asynccontextmanager
 async def lifespan(_: FastAPI):
+    Base.metadata.create_all(bind=engine)
+    migrate_schedule_time_column(engine)
     Base.metadata.create_all(bind=engine)
     scheduler = AsyncIOScheduler()
     notifier = WindowsNotifier()

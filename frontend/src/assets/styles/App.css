@@ -1259,6 +1259,49 @@ input[type="checkbox"] {
   font-size: 13px;
 }
 
+.retro-dialog .schedule-time-toggle {
+  display: inline-flex;
+  width: fit-content;
+  align-items: center;
+  gap: 7px;
+  white-space: nowrap;
+}
+
+.schedule-time-toggle input {
+  width: 14px;
+  height: 14px;
+  margin: 0;
+  accent-color: var(--theme-title);
+}
+
+.schedule-time-picker {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 9px 7px 0;
+  color: var(--theme-text);
+  font-size: 13px;
+}
+
+.schedule-time-picker > span {
+  margin-right: 2px;
+}
+
+.schedule-time-picker select {
+  min-width: 0;
+  padding: 4px 20px 4px 5px;
+  color: var(--theme-text);
+  background: var(--theme-page);
+  border: 2px solid;
+  border-color: var(--theme-shadow) var(--theme-light) var(--theme-light) var(--theme-shadow);
+  font-family: var(--font-light);
+  font-size: 12px;
+}
+
+.schedule-time-picker select:focus {
+  outline: none;
+}
+
 .delete-confirm p {
   padding: 15px 7px 0;
   margin: 0;
@@ -1629,7 +1672,7 @@ input[type="checkbox"] {
 }
 
 .calendar-day.is-adjacent > span,
-.calendar-day.is-adjacent > i {
+.calendar-day.is-adjacent > .calendar-schedule-list {
   opacity: 0.38;
 }
 
@@ -1641,13 +1684,33 @@ input[type="checkbox"] {
   box-shadow: inset 1px 1px 0 var(--theme-shadow);
 }
 
-.calendar-day i {
-  bottom: 8px;
-  width: 7px;
-  height: 7px;
+.calendar-schedule-list {
+  position: absolute;
+  right: 5px;
+  bottom: 4px;
+  left: 5px;
+  display: grid;
+  gap: 1px;
+  text-align: left;
+}
+
+.calendar-schedule-title,
+.calendar-schedule-more {
+  min-width: 0;
+  overflow: hidden;
+  padding: 0 3px;
+  color: var(--theme-title-text);
   background: var(--theme-title);
-  border: 1px solid var(--theme-dark);
-  border-radius: 0;
+  font-family: var(--font-light);
+  font-size: 9px;
+  line-height: 1.2;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.calendar-schedule-more {
+  width: fit-content;
+  font-family: var(--font-regular);
 }
 
 @media (max-width: 700px) {

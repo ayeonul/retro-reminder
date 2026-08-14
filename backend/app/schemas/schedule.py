@@ -5,7 +5,7 @@ from pydantic import BaseModel, ConfigDict, Field
 
 class ScheduleCreate(BaseModel):
     date: Date
-    time: Time
+    time: Time | None = None
     title: str = Field(min_length=1, max_length=200)
     alert_enabled: bool = False
 
@@ -22,7 +22,7 @@ class ScheduleRead(BaseModel):
 
     id: int
     date: Date
-    time: Time
+    time: Time | None
     title: str
     alert_enabled: bool
     notified_at: datetime | None
